@@ -173,14 +173,28 @@
 		"GlueDataQualityS3Bucket": {
 			"Type": "AWS::S3::Bucket",
 			"Properties": {
-				"BucketName": {"Fn::Sub": "glue-dq-blog-${AWS::AccountId}-${AWS::Region}"}
+				"BucketName": {"Fn::Sub": "glue-dq-${AWS::AccountId}-${AWS::Region}"}
 			}
 		},
 		"GlueDataQualityResultsS3Bucket": {
 			"Type": "AWS::S3::Bucket",
 			"Properties": {
-				"BucketName": {"Fn::Sub": "glue-dq-blog-results-${AWS::AccountId}-${AWS::Region}"}
+				"BucketName": {"Fn::Sub": "glue-dq-results-${AWS::AccountId}-${AWS::Region}"}
 			}
 		}
-	}
+	},
+	"Outputs": {
+        "GlueDataQualityS3BucketName": {
+            "Value": {
+                "Ref": "GlueDataQualityS3Bucket"
+            },
+            "Description": "Sample data bucket."
+        },
+        "GlueDataQualityResultsS3BucketName": {
+            "Value": {
+                "Ref": "GlueDataQualityResultsS3Bucket"
+            },
+            "Description": "Glue Data Quality Result Bucket"
+        }
+    }
 }
