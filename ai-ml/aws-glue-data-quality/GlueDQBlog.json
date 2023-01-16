@@ -1,0 +1,186 @@
+{
+	"AWSTemplateFormatVersion": "2010-09-09",
+	"Parameters": {
+		"DataQualityDatabase": {
+			"Description": "Database name for NYC Taxi Dataset",
+			"Type": "String",
+			"Default": "data_quality_database_name"			
+		},
+		"DataQualityTable": {
+			"Description": "Table name for NYC Taxi Dataset",
+			"Type": "String",
+			"Default": "data_quality_table_name"
+		}
+	},
+	"Resources": {
+		"GlueDataQualityBlogRole": {
+			"Type": "AWS::IAM::Role",
+			"Properties": {
+				"RoleName": "GlueDataQualityBlogRole",
+				"AssumeRolePolicyDocument": {
+					"Version": "2012-10-17",
+					"Statement": [{
+						"Effect": "Allow",
+						"Principal": {
+							"Service": [
+								"glue.amazonaws.com"
+							]
+						},
+						"Action": [
+							"sts:AssumeRole"
+						]
+					}]
+				},
+				"Path": "/",
+				"ManagedPolicyArns": [
+					"arn:aws:iam::aws:policy/service-role/AWSGlueServiceRole"
+				],
+				"Policies": [
+					{
+						"PolicyName": "GlueDataQualityBlogPolicy",
+						"PolicyDocument": {
+							"Version": "2012-10-17",
+							"Statement": [{
+								"Sid": "S3BucketPermissions",
+								"Effect": "Allow",
+								"Action": [
+									"s3:*"
+								],
+								"Resource": [
+									{"Fn::Sub": "arn:aws:s3:::${GlueDataQualityS3Bucket}*"},
+									{"Fn::Sub": "arn:aws:s3:::${GlueDataQualityS3Bucket}/*"},
+									{"Fn::Sub": "arn:aws:s3:::${GlueDataQualityResultsS3Bucket}*"},
+									{"Fn::Sub": "arn:aws:s3:::${GlueDataQualityResultsS3Bucket}/*"}
+								]
+							}]
+						}
+					}
+				]
+			}
+		},
+		"GlueDataQualityDatabase": {
+			"Type" : "AWS::Glue::Database",
+			"Properties": {
+				"CatalogId": {"Ref": "AWS::AccountId"},
+				"DatabaseInput": {
+					"Name": {"Fn::Sub": "${DataQualityDatabase}"}
+				}
+			}
+		},
+		"GlueDataQualityTable": {
+			"DependsOn": "GlueDataQualityDatabase",
+			"Type" : "AWS::Glue::Table",
+			"Properties": {
+				"CatalogId": {"Ref": "AWS::AccountId"},
+				"DatabaseName": {"Fn::Sub": "${DataQualityDatabase}"},
+				"TableInput": {
+					"Name": {"Fn::Sub": "${DataQualityTable}"},
+					"TableType": "EXTERNAL_TABLE",
+					"Parameters": {
+						"classification": "parquet",
+						"compressionType": "none",
+						"typeOfData": "file"
+					},
+					"StorageDescriptor": {
+						"OutputFormat": "org.apache.hadoop.hive.ql.io.parquet.MapredParquetOutputFormat",
+						"InputFormat": "org.apache.hadoop.hive.ql.io.parquet.MapredParquetInputFormat",
+						"Location": {"Fn::Sub": "s3://${GlueDataQualityS3Bucket}/"},
+						"SerdeInfo": {
+							"SerializationLibrary": "org.apache.hadoop.hive.ql.io.parquet.serde.ParquetHiveSerDe"
+						},
+						"Columns": [
+						      {
+						        "Name": "vendorid",
+						        "Type": "bigint"
+						      },
+						      {
+						        "Name": "tpep_pickup_datetime",
+						        "Type": "timestamp"
+						      },
+						      {
+						        "Name": "tpep_dropoff_datetime",
+						        "Type": "timestamp"
+						      },
+						      {
+						        "Name": "passenger_count",
+						        "Type": "double"
+						      },
+						      {
+						        "Name": "trip_distance",
+						        "Type": "double"
+						      },
+						      {
+						        "Name": "ratecodeid",
+						        "Type": "double"
+						      },
+						      {
+						        "Name": "store_and_fwd_flag",
+						        "Type": "string"
+						      },
+						      {
+						        "Name": "pulocationid",
+						        "Type": "bigint"
+						      },
+						      {
+						        "Name": "dolocationid",
+						        "Type": "bigint"
+						      },
+						      {
+						        "Name": "payment_type",
+						        "Type": "bigint"
+						      },
+						      {
+						        "Name": "fare_amount",
+						        "Type": "double"
+						      },
+						      {
+						        "Name": "extra",
+						        "Type": "double"
+						      },
+						      {
+						        "Name": "mta_tax",
+						        "Type": "double"
+						      },
+						      {
+						        "Name": "tip_amount",
+						        "Type": "double"
+						      },
+						      {
+						        "Name": "tolls_amount",
+						        "Type": "double"
+						      },
+						      {
+						        "Name": "improvement_surcharge",
+						        "Type": "double"
+						      },
+						      {
+						        "Name": "total_amount",
+						        "Type": "double"
+						      },
+						      {
+						        "Name": "congestion_surcharge",
+						        "Type": "double"
+						      },
+						      {
+						        "Name": "airport_fee",
+						        "Type": "double"
+						      }
+						]
+					}
+				}
+			}
+		},
+		"GlueDataQualityS3Bucket": {
+			"Type": "AWS::S3::Bucket",
+			"Properties": {
+				"BucketName": {"Fn::Sub": "glue-dq-blog-${AWS::AccountId}-${AWS::Region}-${AWS::StackName}"}
+			}
+		},
+		"GlueDataQualityResultsS3Bucket": {
+			"Type": "AWS::S3::Bucket",
+			"Properties": {
+				"BucketName": {"Fn::Sub": "glue-dq-blog-results-${AWS::AccountId}-${AWS::Region}-${AWS::StackName}"}
+			}
+		}
+	}
+}
